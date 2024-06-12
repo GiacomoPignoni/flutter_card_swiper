@@ -1,7 +1,6 @@
 part of 'card_swiper.dart';
 
-class _CardSwiperState<T extends Widget> extends State<CardSwiper>
-    with SingleTickerProviderStateMixin {
+class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTickerProviderStateMixin {
   late CardAnimation _cardAnimation;
   late AnimationController _animationController;
 
@@ -58,8 +57,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
         _detectedVerticalDirection = direction;
     }
 
-    widget.onSwipeDirectionChange
-        ?.call(_detectedHorizontalDirection, _detectedVerticalDirection);
+    widget.onSwipeDirectionChange?.call(_detectedHorizontalDirection, _detectedVerticalDirection);
   }
 
   @override
@@ -70,6 +68,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
 
   @override
   Widget build(BuildContext context) {
+    print("CIAO");
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return Padding(
@@ -79,9 +78,10 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
               return Stack(
                 clipBehavior: Clip.none,
                 fit: StackFit.expand,
-                children: List.generate(numberOfCardsOnScreen(), (index) {
-                  if (index == 0) return _frontItem(constraints);
-                  return _backItem(constraints, index);
+                children: List.generate(numberOfCardsOnScreen() + 1, (index) {
+                  if (index == 0) return _previousItem(constraints);
+                  if (index == 1) return _frontItem(constraints);
+                  return _backItem(constraints, index - 1);
                 }).reversed.toList(),
               );
             },
@@ -156,6 +156,20 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
     );
   }
 
+  Widget _previousItem(BoxConstraints constraints) {
+    final previousIndex = getPreviousIndex();
+    if (previousIndex == null) return const SizedBox();
+
+    return Positioned(
+      top: 0,
+      left: -1000,
+      child: ConstrainedBox(
+        constraints: constraints,
+        child: widget.cardBuilder(context, previousIndex, 0, 0),
+      ),
+    );
+  }
+
   void _controllerListener(ControllerEvent event) {
     return switch (event) {
       ControllerSwipeEvent(:final direction) => _swipe(direction),
@@ -185,9 +199,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
 
   Future<void> _handleCompleteSwipe() async {
     final isLastCard = _currentIndex! == widget.cardsCount - 1;
-    final shouldCancelSwipe = await widget.onSwipe
-            ?.call(_currentIndex!, _nextIndex, _detectedDirection) ==
-        false;
+    final shouldCancelSwipe = await widget.onSwipe?.call(_currentIndex!, _nextIndex, _detectedDirection) == false;
 
     if (shouldCancelSwipe) {
       return;
@@ -224,14 +236,10 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
 
   CardSwiperDirection _getEndAnimationDirection() {
     if (_cardAnimation.left.abs() > widget.threshold) {
-      return _cardAnimation.left.isNegative
-          ? CardSwiperDirection.left
-          : CardSwiperDirection.right;
+      return _cardAnimation.left.isNegative ? CardSwiperDirection.left : CardSwiperDirection.right;
     }
     if (_cardAnimation.top.abs() > widget.threshold) {
-      return _cardAnimation.top.isNegative
-          ? CardSwiperDirection.top
-          : CardSwiperDirection.bottom;
+      return _cardAnimation.top.isNegative ? CardSwiperDirection.top : CardSwiperDirection.bottom;
     }
     return CardSwiperDirection.none;
   }
@@ -309,6 +317,18 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
     }
 
     final index = _currentIndex! + offset;
+    if (!widget.isLoop && !index.isBetween(0, widget.cardsCount - 1)) {
+      return null;
+    }
+    return index % widget.cardsCount;
+  }
+
+  int? getPreviousIndex() {
+    if (_currentIndex == null) {
+      return null;
+    }
+
+    final index = _currentIndex! - 1;
     if (!widget.isLoop && !index.isBetween(0, widget.cardsCount - 1)) {
       return null;
     }
