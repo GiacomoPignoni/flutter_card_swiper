@@ -68,7 +68,6 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    print("CIAO");
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return Padding(
