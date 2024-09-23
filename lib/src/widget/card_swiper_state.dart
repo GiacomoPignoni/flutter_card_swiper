@@ -291,9 +291,11 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTi
     if (index == _currentIndex) return;
     if (index < 0 || index >= widget.cardsCount) return;
 
-    setState(() {
-      _undoableIndex.state = index;
-    });
+    if (mounted) {
+      setState(() {
+        _undoableIndex.state = index;
+      });
+    }
   }
 
   int numberOfCardsOnScreen() {
