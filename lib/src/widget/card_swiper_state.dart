@@ -254,7 +254,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTi
   }
 
   void _swipe(CardSwiperDirection direction) {
-    if (_currentIndex == null) return;
+    if (_currentIndex == null || !mounted) return;
     _swipeType = SwipeType.swipe;
     _detectedDirection = direction;
     _cardAnimation.animate(context, direction);
