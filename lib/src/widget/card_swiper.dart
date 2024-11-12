@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_card_swiper/src/card_animation.dart';
 import 'package:flutter_card_swiper/src/controller/card_swiper_controller.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_card_swiper/src/properties/allowed_swipe_direction.dart'
 import 'package:flutter_card_swiper/src/typedefs.dart';
 import 'package:flutter_card_swiper/src/utils/number_extension.dart';
 import 'package:flutter_card_swiper/src/utils/undoable.dart';
+import 'package:flutter_card_swiper/src/widget/zoom_overlay.dart';
 
 part 'card_swiper_state.dart';
 
@@ -124,6 +126,10 @@ class CardSwiper extends StatefulWidget {
   /// Must be a positive value. Defaults to Offset(0, 40).
   final Offset backCardOffset;
 
+  final Color? zoomBarrierColor;
+  final double minZoom;
+  final double maxZoom;
+
   const CardSwiper({
     required this.cardBuilder,
     required this.cardsCount,
@@ -144,6 +150,9 @@ class CardSwiper extends StatefulWidget {
     this.numberOfCardsDisplayed = 2,
     this.onUndo,
     this.backCardOffset = const Offset(0, 40),
+    this.zoomBarrierColor,
+    this.minZoom = 1.0,
+    this.maxZoom = 5.0,
     super.key,
   })  : assert(
           maxAngle >= 0 && maxAngle <= 360,

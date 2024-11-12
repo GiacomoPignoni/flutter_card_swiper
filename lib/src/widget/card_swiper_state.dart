@@ -94,7 +94,11 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTi
     return Positioned(
       left: _cardAnimation.left,
       top: _cardAnimation.top,
-      child: GestureDetector(
+      child: ZoomOverlay(
+        minScale: widget.minZoom,
+        maxScale: widget.maxZoom,
+        buildContextOverlayState: context,
+        modalBarrierColor: widget.zoomBarrierColor,
         child: Transform.rotate(
           angle: _cardAnimation.angle,
           child: ConstrainedBox(
@@ -115,7 +119,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTi
         onPanStart: (tapInfo) {
           if (!widget.isDisabled) {
             final renderBox = context.findRenderObject()! as RenderBox;
-            final position = renderBox.globalToLocal(tapInfo.globalPosition);
+            final position = tapInfo.localFocalPoint;
 
             if (position.dy < renderBox.size.height / 2) _tappedOnTop = true;
           }
@@ -124,8 +128,8 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTi
           if (!widget.isDisabled) {
             setState(
               () => _cardAnimation.update(
-                tapInfo.delta.dx,
-                tapInfo.delta.dy,
+                tapInfo.focalPointDelta.dx,
+                tapInfo.focalPointDelta.dy,
                 _tappedOnTop,
               ),
             );
