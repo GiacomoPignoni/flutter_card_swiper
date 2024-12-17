@@ -5,6 +5,7 @@ import 'package:vector_math/vector_math_64.dart';
 class ZoomOverlay extends StatefulWidget {
   const ZoomOverlay({
     required this.child,
+    this.childForZoom,
     this.buildContextOverlayState,
     this.minScale,
     this.maxScale,
@@ -21,6 +22,7 @@ class ZoomOverlay extends StatefulWidget {
   });
 
   final Widget child;
+  final WidgetBuilder? childForZoom;
   final BuildContext? buildContextOverlayState;
   final double? minScale;
   final double? maxScale;
@@ -108,9 +110,7 @@ class _ZoomOverlayState extends State<ZoomOverlay> with TickerProviderStateMixin
     final renderBox = renderObject as RenderBox;
     final position = renderBox.localToGlobal(Offset.zero);
 
-    _transformMatrix = Matrix4.translation(
-      Vector3(position.dx, position.dy, 0),
-    );
+    _transformMatrix = Matrix4.identity();
 
     show();
 
@@ -196,7 +196,7 @@ class _ZoomOverlayState extends State<ZoomOverlay> with TickerProviderStateMixin
           _TransformWidget(
             key: _transformWidget,
             matrix: _transformMatrix,
-            child: widget.child,
+            child: widget.childForZoom?.call(context) ?? widget.child,
           ),
         ],
       ),

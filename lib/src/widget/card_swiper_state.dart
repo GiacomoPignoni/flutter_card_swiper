@@ -95,6 +95,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTi
       left: _cardAnimation.left,
       top: _cardAnimation.top,
       child: ZoomOverlay(
+        childForZoom: widget.zoomBuilder != null ? (context) => widget.zoomBuilder!(context, _currentIndex!) : null,
         minScale: widget.minZoom,
         maxScale: widget.maxZoom,
         buildContextOverlayState: context,

@@ -24,6 +24,8 @@ class CardSwiper extends StatefulWidget {
   /// It can return `null`, which will result in an empty card being displayed.
   final NullableCardBuilder cardBuilder;
 
+  final IndexedWidgetBuilder? zoomBuilder;
+
   /// The number of cards in the stack.
   ///
   /// The [cardsCount] parameter specifies the number of cards that will be displayed in the stack.
@@ -133,6 +135,7 @@ class CardSwiper extends StatefulWidget {
   const CardSwiper({
     required this.cardBuilder,
     required this.cardsCount,
+    this.zoomBuilder,
     this.controller,
     this.initialIndex = 0,
     this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
