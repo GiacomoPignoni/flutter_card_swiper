@@ -1,7 +1,6 @@
 part of 'card_swiper.dart';
 
-class _CardSwiperState<T extends Widget> extends State<CardSwiper>
-    with SingleTickerProviderStateMixin {
+class _CardSwiperState<T extends Widget> extends State<CardSwiper> with SingleTickerProviderStateMixin {
   late CardAnimation _cardAnimation;
   late AnimationController _animationController;
 
@@ -31,8 +30,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
 
     _undoableIndex.state = widget.initialIndex;
 
-    controllerSubscription =
-        widget.controller?.events.listen(_controllerListener);
+    controllerSubscription = widget.controller?.events.listen(_controllerListener);
 
     _animationController = AnimationController(
       duration: widget.duration,
@@ -55,8 +53,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
   void didUpdateWidget(CardSwiper oldWidget) {
     super.didUpdateWidget(oldWidget);
     controllerSubscription?.cancel();
-    controllerSubscription =
-        widget.controller?.events.listen(_controllerListener);
+    controllerSubscription = widget.controller?.events.listen(_controllerListener);
   }
 
   void onSwipeDirectionChanged(CardSwiperDirection direction) {
@@ -72,8 +69,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
         _detectedVerticalDirection = direction;
     }
 
-    widget.onSwipeDirectionChange
-        ?.call(_detectedHorizontalDirection, _detectedVerticalDirection);
+    widget.onSwipeDirectionChange?.call(_detectedHorizontalDirection, _detectedVerticalDirection);
   }
 
   @override
@@ -94,9 +90,10 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
               return Stack(
                 clipBehavior: Clip.none,
                 fit: StackFit.expand,
-                children: List.generate(numberOfCardsOnScreen(), (index) {
-                  if (index == 0) return _frontItem(constraints);
-                  return _backItem(constraints, index);
+                children: List.generate(numberOfCardsOnScreen() + 1, (index) {
+                  if (index == 0) return _previousItem(constraints);
+                  if (index == 1) return _frontItem(constraints);
+                  return _backItem(constraints, index - 1);
                 }).reversed.toList(),
               );
             },
@@ -110,7 +107,12 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
     return Positioned(
       left: _cardAnimation.left,
       top: _cardAnimation.top,
-      child: GestureDetector(
+      child: ZoomOverlay(
+        childForZoom: widget.zoomBuilder != null ? (context) => widget.zoomBuilder!(context, _currentIndex!) : null,
+        minScale: widget.minZoom,
+        maxScale: widget.maxZoom,
+        buildContextOverlayState: context,
+        modalBarrierColor: widget.zoomBarrierColor,
         child: Transform.rotate(
           angle: _cardAnimation.angle,
           child: ConstrainedBox(
@@ -131,7 +133,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
         onPanStart: (tapInfo) {
           if (!widget.isDisabled) {
             final renderBox = context.findRenderObject()! as RenderBox;
-            final position = renderBox.globalToLocal(tapInfo.globalPosition);
+            final position = tapInfo.localFocalPoint;
 
             if (position.dy < renderBox.size.height / 2) _tappedOnTop = true;
           }
@@ -140,22 +142,19 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
           if (!widget.isDisabled) {
             setState(() {
               _cardAnimation.update(
-                tapInfo.delta.dx,
-                tapInfo.delta.dy,
+                tapInfo.focalPointDelta.dx,
+                tapInfo.focalPointDelta.dy,
                 _tappedOnTop,
               );
 
               if (widget.showBackCardOnUndo) {
                 final shouldShowPreviousCard = switch (widget.undoDirection) {
-                  UndoDirection.left =>
-                    _cardAnimation.left < -widget.undoSwipeThreshold,
-                  UndoDirection.right =>
-                    _cardAnimation.left > widget.undoSwipeThreshold,
+                  UndoDirection.left => _cardAnimation.left < -widget.undoSwipeThreshold,
+                  UndoDirection.right => _cardAnimation.left > widget.undoSwipeThreshold,
                 };
 
                 if (shouldShowPreviousCard) {
-                  _backgroundCardIndex =
-                      _undoableIndex.previousState ?? getValidIndexOffset(-1);
+                  _backgroundCardIndex = _undoableIndex.previousState ?? getValidIndexOffset(-1);
                 } else {
                   _backgroundCardIndex = _nextIndex;
                 }
@@ -199,6 +198,20 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
     );
   }
 
+  Widget _previousItem(BoxConstraints constraints) {
+    final previousIndex = getPreviousIndex();
+    if (previousIndex == null) return const SizedBox();
+
+    return Positioned(
+      top: 0,
+      left: -100000,
+      child: ConstrainedBox(
+        constraints: constraints,
+        child: widget.cardBuilder(context, previousIndex, 0, 0),
+      ),
+    );
+  }
+
   void _controllerListener(ControllerEvent event) {
     return switch (event) {
       ControllerSwipeEvent(:final direction) => _swipe(direction),
@@ -228,9 +241,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
 
   Future<void> _handleCompleteSwipe() async {
     final isLastCard = _currentIndex! == widget.cardsCount - 1;
-    final shouldCancelSwipe = await widget.onSwipe
-            ?.call(_currentIndex!, _nextIndex, _detectedDirection) ==
-        false;
+    final shouldCancelSwipe = await widget.onSwipe?.call(_currentIndex!, _nextIndex, _detectedDirection) == false;
 
     if (shouldCancelSwipe) {
       return;
@@ -270,14 +281,10 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
 
   CardSwiperDirection _getEndAnimationDirection() {
     if (_cardAnimation.left.abs() > widget.threshold) {
-      return _cardAnimation.left.isNegative
-          ? CardSwiperDirection.left
-          : CardSwiperDirection.right;
+      return _cardAnimation.left.isNegative ? CardSwiperDirection.left : CardSwiperDirection.right;
     }
     if (_cardAnimation.top.abs() > widget.threshold) {
-      return _cardAnimation.top.isNegative
-          ? CardSwiperDirection.top
-          : CardSwiperDirection.bottom;
+      return _cardAnimation.top.isNegative ? CardSwiperDirection.top : CardSwiperDirection.bottom;
     }
     return CardSwiperDirection.none;
   }
@@ -293,7 +300,7 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
   }
 
   void _swipe(CardSwiperDirection direction) {
-    if (_currentIndex == null) return;
+    if (_currentIndex == null || !mounted) return;
     _swipeType = SwipeType.swipe;
     _detectedDirection = direction;
     _cardAnimation.animate(context, direction);
@@ -330,9 +337,11 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
     if (index == _currentIndex) return;
     if (index < 0 || index >= widget.cardsCount) return;
 
-    setState(() {
-      _undoableIndex.state = index;
-    });
+    if (mounted) {
+      setState(() {
+        _undoableIndex.state = index;
+      });
+    }
   }
 
   int numberOfCardsOnScreen() {
@@ -362,5 +371,17 @@ class _CardSwiperState<T extends Widget> extends State<CardSwiper>
 
     final result = index % widget.cardsCount;
     return result < 0 ? result + widget.cardsCount : result;
+  }
+
+  int? getPreviousIndex() {
+    if (_currentIndex == null) {
+      return null;
+    }
+
+    final index = _currentIndex! - 1;
+    if (!widget.isLoop && !index.isBetween(0, widget.cardsCount - 1)) {
+      return null;
+    }
+    return index % widget.cardsCount;
   }
 }

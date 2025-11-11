@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
 
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_card_swiper/flutter_card_swiper.dart';
 import 'package:flutter_card_swiper/src/card_animation.dart';
 import 'package:flutter_card_swiper/src/controller/controller_event.dart';
 import 'package:flutter_card_swiper/src/utils/number_extension.dart';
 import 'package:flutter_card_swiper/src/utils/undoable.dart';
+import 'package:flutter_card_swiper/src/widget/zoom_overlay.dart';
 
 part 'card_swiper_state.dart';
 
@@ -19,6 +21,8 @@ class CardSwiper extends StatefulWidget {
   /// as a percentage. The function should return a widget that represents the card at the given index.
   /// It can return `null`, which will result in an empty card being displayed.
   final NullableCardBuilder cardBuilder;
+
+  final IndexedWidgetBuilder? zoomBuilder;
 
   /// The number of cards in the stack.
   ///
@@ -136,9 +140,14 @@ class CardSwiper extends StatefulWidget {
   /// Defaults to 50.0.
   final double undoSwipeThreshold;
 
+  final Color? zoomBarrierColor;
+  final double minZoom;
+  final double maxZoom;
+
   const CardSwiper({
     required this.cardBuilder,
     required this.cardsCount,
+    this.zoomBuilder,
     this.controller,
     this.initialIndex = 0,
     this.padding = const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
@@ -159,6 +168,9 @@ class CardSwiper extends StatefulWidget {
     this.undoDirection = UndoDirection.left,
     this.showBackCardOnUndo = false,
     this.undoSwipeThreshold = 50.0,
+    this.zoomBarrierColor,
+    this.minZoom = 1.0,
+    this.maxZoom = 5.0,
     super.key,
   })  : assert(
           maxAngle >= 0 && maxAngle <= 360,
